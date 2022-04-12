@@ -1,0 +1,12 @@
+# IDE
+.idea
+
+# CSV files
+*.csv
+
+# Composer
+/vendor/
+
+# Phpdoc
+.phpdoc
+/phpdoc/
