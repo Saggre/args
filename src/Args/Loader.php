@@ -2,8 +2,6 @@
 
 namespace Args;
 
-use JetBrains\PhpStorm\ArrayShape;
-
 class Loader
 {
     protected array $parsedArgs;
@@ -53,7 +51,7 @@ class Loader
      *
      * @return array
      */
-    #[ArrayShape(['named' => "array", 'short' => "array", 'posit' => "array"])] protected function parseArgs(): array
+    protected function parseArgs(): array
     {
         global $argv;
 
