@@ -2,9 +2,11 @@
 
 namespace Args;
 
+use JetBrains\PhpStorm\ArrayShape;
+
 class Loader
 {
-    protected $parsedArgs;
+    protected array $parsedArgs;
 
     public function __construct()
     {
@@ -24,11 +26,11 @@ class Loader
      *
      * @param array        $args Argument array.
      * @param string       $key Argument key.
-     * @param string|array $value Argument value or values.
+     * @param array|string $value Argument value or values.
      *
      * @return void
      */
-    public function addArg(array &$args, string $key, $value)
+    public function addArg(array &$args, string $key, array|string $value)
     {
         if (empty($value)) {
             $value = true;
@@ -51,7 +53,7 @@ class Loader
      *
      * @return array
      */
-    protected function parseArgs(): array
+    #[ArrayShape(['named' => "array", 'short' => "array", 'posit' => "array"])] protected function parseArgs(): array
     {
         global $argv;
 
@@ -85,7 +87,7 @@ class Loader
      *
      * @return string|array|null Argument value or array if there are multiple values or null if not found.
      */
-    public function getArg($arg, ?string $short_arg = null, int $flags = GET_ARG_DEFAULT_FLAGS)
+    public function getArg(int|string $arg, ?string $short_arg = null, int $flags = GET_ARG_DEFAULT_FLAGS): array|string|null
     {
         list($named, $short, $posit) = array_values($this->getParsedArgs());
 
