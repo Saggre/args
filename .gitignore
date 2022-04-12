@@ -10,3 +10,8 @@
 # Phpdoc
 .phpdoc
 /phpdoc/
+
+# PHPUnit
+phpunit.xml
+.phpunit*
+

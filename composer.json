@@ -15,7 +15,10 @@
     "args"
   ],
   "require": {
-    "php": ">=7.2.0"
+    "php": ">=8.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^9.5"
   },
   "autoload": {
     "files": [
@@ -23,6 +26,11 @@
     ],
     "psr-4": {
       "Args\\": "src/Args/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Args\\Test\\": "tests/"
     }
   },
   "scripts": {
