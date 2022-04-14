@@ -28,7 +28,7 @@ class Loader
      *
      * @return void
      */
-    public function addArg(array &$args, string $key, array|string $value)
+    public function addArg(array &$args, string $key, $value)
     {
         if (empty($value)) {
             $value = true;
@@ -85,7 +85,7 @@ class Loader
      *
      * @return string|array|null Argument value or array if there are multiple values or null if not found.
      */
-    public function getArg(int|string $arg, ?string $short_arg = null, int $flags = GET_ARG_DEFAULT_FLAGS): array|string|null
+    public function getArg($arg, ?string $short_arg = null, int $flags = GET_ARG_DEFAULT_FLAGS)
     {
         list($named, $short, $posit) = array_values($this->getParsedArgs());
 
