@@ -7,11 +7,15 @@
 # Composer
 /vendor/
 
-# Phpdoc
-.phpdoc
-/phpdoc/
-
 # PHPUnit
 phpunit.xml
 .phpunit*
+
+# PHPDocumentor
+.phpdoc
+/phpdoc/
+phpdoc.xml
+
+# Documentation
+/docs/
 

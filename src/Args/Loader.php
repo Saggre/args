@@ -11,6 +11,10 @@ class Loader
         $this->parsedArgs = $this->parseArgs();
     }
 
+    public function declareArgument(){
+
+    }
+
     /**
      * @return array[]
      */
@@ -85,7 +89,7 @@ class Loader
      *
      * @return string|array|null Argument value or array if there are multiple values or null if not found.
      */
-    public function getArg($arg, ?string $short_arg = null, int $flags = GET_ARG_DEFAULT_FLAGS)
+    public function getArg($arg, ?string $short_arg = null, int $flags = ARGS_GET_ARG_DEFAULT_FLAGS)
     {
         list($named, $short, $posit) = array_values($this->getParsedArgs());
 
@@ -109,17 +113,16 @@ class Loader
             $this->addArg($result, $arg, $short[$short_arg]);
         }
 
-        if (($flags & UNWRAP_SINGLE_VALUE) && isset($result[$arg]) && count($result[$arg]) === 1) {
+        if (($flags & ARGS_UNWRAP_SINGLE_VALUE) && isset($result[$arg]) && count($result[$arg]) === 1) {
             return reset($result[$arg]);
         }
 
         $arg_count = isset($result[$arg]) ? count($result[$arg]) : 0;
-        if (($flags & DISALLOW_MULTIPLE_VALUES) && $arg_count > 1) {
+        if (($flags & ARGS_DISALLOW_MULTIPLE_VALUES) && $arg_count > 1) {
             $arg_name = "--$arg" . ($short_arg ? " or -$short_arg" : '');
             throw new \RuntimeException("Multiple values not allowed for argument $arg_name. $arg_count provided.");
         }
 
         return $result[$arg] ?? array();
     }
-
 }
