@@ -2,10 +2,19 @@
 
 namespace Args;
 
+use Args\UtilityArgument\Argument;
+use Args\UtilityArgument\Block;
+use Args\UtilityArgument\Operand;
+use Args\UtilityArgument\Option;
+
 class UtilityArgumentString
 {
     private string $argumentString;
-    private array $argumentBlocks;
+
+    /**
+     * @var Block[]
+     */
+    private array $blocks;
 
     /**
      * @param  string  $argumentString
@@ -13,7 +22,8 @@ class UtilityArgumentString
     public function __construct(string $argumentString)
     {
         $this->argumentString = self::sanitizeArgumentString($argumentString);
-        $this->argumentBlocks = self::parseStringBlocks($this->argumentString);
+        $stringBlocks         = self::explodeStringBlocks($this->argumentString);
+        $this->blocks         = array_map([self::class, 'parseStringBlock'], $stringBlocks);
     }
 
     /**
@@ -23,7 +33,7 @@ class UtilityArgumentString
      *
      * @return array
      */
-    public static function parseStringBlocks(string $argumentString): array
+    public static function explodeStringBlocks(string $argumentString): array
     {
         preg_match_all(
             '/((?:\[[^\]\.]*(?:\.{3})?\]+(?:\.{3})?)|(?:(?:(?:-[\w\d])|(?:--[\w\d]+)|(?:\([^\)\.]*(?:\.{3})?\)+ (?:\.{3})?))\s?[^\[\s\.]*(?:\.{3})?))/',
@@ -55,14 +65,68 @@ class UtilityArgumentString
         return trim($argumentString);
     }
 
-    public static function fromUsageMessageBlock(string $block): self
+    protected static function reduceStringBlock(string $stringBlock): array
     {
-        $pattern  = 'program [-aDde] [-f | -g] [(-n | --number) number] [-b b_arg | -c c_arg] req1 req2 [opt1 [opt2]]';
-        $argument = new self();
+        $stringBlock = trim($stringBlock);
 
-        // TODO;
+        $isOptional  = false;
+        $isRepeating = false;
 
-        return $argument;
+        if (preg_match('/^.+\.{3}$/', $stringBlock)) {
+            $isRepeating = true;
+            $stringBlock = substr($stringBlock, 0, -3);
+        }
+
+        if (preg_match('/^\[.*\]$/', $stringBlock)) {
+            $isOptional  = true;
+            $stringBlock = substr($stringBlock, 1, -1);
+        }
+
+        if (preg_match('/^.+\.{3}$/', $stringBlock)) {
+            $isRepeating = true;
+            $stringBlock = substr($stringBlock, 0, -3);
+        }
+
+        return [
+            'stringBlock' => $stringBlock,
+            'isOptional'  => $isOptional,
+            'isRepeating' => $isRepeating,
+        ];
+    }
+
+    public static function parseStringBlock(string $stringBlock): Block
+    {
+        $result = self::reduceStringBlock($stringBlock);
+        list($stringBlock, $isOptional, $isRepeating) = array_values($result);
+
+        preg_match_all(
+            '/[\(]?-{1,2}(\w+)/',
+            $stringBlock,
+            $matches
+        );
+
+        $optionStrings = $matches[1] ?? array();
+
+        if (empty($optionStrings)) {
+            // Operand.
+            return new Operand($isOptional, $isRepeating, trim($stringBlock));
+        } else {
+            // Option.
+            usort($optionStrings, function ($a, $b) {
+                return strlen($a) > strlen($b);
+            });
+
+            $option = new Option($isOptional, $isRepeating, $optionStrings[0], array_slice($optionStrings, 1));
+
+            if (preg_match('([\s\[]\w+(?:\.{3})?\]?$)', $stringBlock, $matches)) {
+                $result = self::reduceStringBlock($matches[0]);
+                list($stringBlock, $isOptional, $isRepeating) = array_values($result);
+
+                $option->setArgument(new Argument($isOptional, $isRepeating, trim($stringBlock)));
+            }
+
+            return $option;
+        }
     }
 
     /**
