@@ -1,8 +1,8 @@
 <?php
 
-namespace Args;
+namespace Args\Helpers;
 
-class Helper
+class StringArgument
 {
     /**
      * Remove leading dashes from a string.
@@ -24,10 +24,5 @@ class Helper
     public static function isShortArgument(string $argument): bool
     {
         return preg_match('/^-/', $argument);
-    }
-
-    public static function getPositionalArguments(): array
-    {
-        // TODO
     }
 }

@@ -2,109 +2,73 @@
 
 namespace Args;
 
-use Args\Loader\InputArgument;
-use Args\Loader\InputArgumentValue;
+use Args\Helpers\ArgumentsFormatter;
+use Args\Loader\InputElement;
+use Args\UtilityArgument\Argument;
+use Args\UtilityArgument\Block;
+use Args\UtilityArgument\Operand;
 use Args\UtilityArgument\Option;
 
 class Loader
 {
     protected UtilityArgumentString $map;
 
+    private array $options;
+    private array $operands;
+
     public function __construct(UtilityArgumentString $map)
     {
         $this->map = $map;
-    }
-
-    public function parseArgs(array $args): array
-    {
-        $arguments = array();
-
-        foreach ($args as $arg) {
-            $split = explode('=', $arg);
-
-            foreach ($split as $value) {
-                $arguments[] = trim($value);
-            }
-        }
-
-        return $arguments;
-    }
-
-    public function normalizeArgs(array $args): array
-    {
-        foreach ($args as &$arg) {
-            $option = $this->map->findOption($arg);
-
-            if (empty($option)) {
-                continue;
-            }
-
-            if (in_array($arg, $option->getAlternates(true))) {
-                $arg = $option->getChar(true);
-            }
-        }
-
-        return $args;
-    }
-
-    public function collectArgument(array $args, Option $option): InputArgument
-    {
-        $inputArgument = new InputArgument();
-
-        $args = $this->parseArgs($args);
-        $args = $this->NormalizeArgs($args);
-
-        $collectingArgument = null;
-        $foundCurrent       = 0;
-        for ($i = 0; $i < count($args); $i++) {
-            $value     = $args[$i];
-            $isOption  = Helper::isArgument($value);
-            $isCurrent = $value === $option->getChar(true);
-
-            if ( ! empty($collectingArgument)) {
-                if ($isOption) {
-                    $collectingArgument = null;
-                } else {
-                    $inputArgument->addValue(new InputArgumentValue($value, $i));
-
-                    if ( ! $collectingArgument->isRepeating()) {
-                        $collectingArgument = null;
-                    }
-                }
-            }
-
-            if ($isCurrent) {
-                $foundCurrent++;
-
-                if ($foundCurrent > 1 && ! $option->isRepeating()) {
-                    throw new \RuntimeException(sprintf('Option "%s" is not repeating', $option->getChar(true)));
-                }
-
-                if ($option->getArgument() === null) {
-                    $inputArgument->addValue(new InputArgumentValue(true, $i));
-                } else {
-                    $collectingArgument = $option->getArgument();
-                }
-            }
-        }
-
-        if ( ! $option->isOptional() && empty($inputArgument->getValues())) {
-            throw new \RuntimeException("Option '{$option->getChar(true)}' is required");
-        }
-
-        return $inputArgument;
-    }
-
-    public function getOption(string $name): InputArgument
-    {
-        $option = $this->map->findOption($name);
-
-        if (empty($option)) {
-            throw new \RuntimeException("Option '$name' not specified in utility argument string");
-        }
 
         global $argv;
+        $args = ArgumentsFormatter::expandArgs($argv);
+        $args = ArgumentsFormatter::normalizeArgs($args, $this->map);
+        list($options, $operands) = array_values(ArgumentsFormatter::reduceArgs($args));
 
-        return $this->collectArgument($argv, $option);
+        $this->options  = ArgumentsFormatter::mapOptions($options);
+        $this->operands = ArgumentsFormatter::mapOperands($operands, count($options));
+    }
+
+    public function getInputElementForBlock(Block $block): ?InputElement
+    {
+        if (is_a($block, Argument::class)) {
+            throw new \RuntimeException('Block cannot be an argument');
+        }
+
+        if (is_a($block, Option::class)) {
+            foreach ($this->options as $option) {
+                if ($option->getKey() === $block->getChar(true)) {
+                    return $option;
+                }
+            }
+        } elseif (is_a($block, Operand::class)) {
+            return $this->operands[0] ?? null;
+        }
+
+        return null;
+    }
+
+    public function getOpt(string $key, $default = null)
+    {
+        $block = $this->map->findOptionByKey($key);
+
+        if (empty($block)) {
+            throw new \RuntimeException("Option $key not found");
+        }
+
+        $inputElement = $this->getInputElementForBlock($block);
+
+        if (empty($inputElement)) {
+            throw new \RuntimeException("Input for $key not found");
+        }
+
+        switch (count($inputElement->getValues())) {
+            case 0:
+                return $default;
+            case 1:
+                return $inputElement->getValues()[0];
+            default:
+                return $inputElement->getValues();
+        }
     }
 }

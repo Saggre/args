@@ -2,6 +2,7 @@
 
 namespace Args;
 
+use Args\Helpers\StringArgument;
 use Args\UtilityArgument\Argument;
 use Args\UtilityArgument\Block;
 use Args\UtilityArgument\Operand;
@@ -23,24 +24,75 @@ class UtilityArgumentString
     {
         $this->argumentString = self::sanitizeArgumentString($argumentString);
         $stringBlocks         = self::explodeStringBlocks($this->argumentString);
-        $this->blocks         = array_map([self::class, 'parseStringBlock'], $stringBlocks);
+        $this->blocks         = [];
+        foreach (array_values($stringBlocks) as $index => $stringBlock) {
+            $this->blocks[] = self::parseStringBlock($stringBlock, $index);
+        }
     }
 
     /**
-     * @param  string  $name
+     * @param  string  $key
      *
      * @return Option|null
      */
-    public function findOption(string $name): ?Option
+    public function findOptionByKey(string $key): ?Option
     {
-        $name = Helper::stripArgument($name);
+        $key = StringArgument::stripArgument($key);
 
         foreach ($this->blocks as $block) {
             if ( ! is_a($block, Option::class)) {
                 continue;
             }
 
-            if (in_array($name, $block->getAllIdentifiers())) {
+            if (in_array($key, $block->getAllIdentifiers())) {
+                return $block;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  string  $name  Argument name.
+     *
+     * @return Option|null
+     */
+    public function findOptionByArgumentName(string $name): ?Option
+    {
+        $name = trim($name);
+
+        foreach ($this->blocks as $block) {
+            if ( ! is_a($block, Option::class)) {
+                continue;
+            }
+
+            if ($block->getArgument() === null) {
+                continue;
+            }
+
+            if ($block->getArgument()->getName() === $name) {
+                return $block;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  string  $name  Operand name.
+     *
+     * @return Option|null
+     */
+    public function findOperandByName(string $name): ?Operand
+    {
+        $name = trim($name);
+
+        foreach ($this->blocks as $block) {
+            if ( ! is_a($block, Operand::class)) {
+                continue;
+            }
+
+            if ($block->getName() === $name) {
                 return $block;
             }
         }
@@ -133,18 +185,22 @@ class UtilityArgumentString
         ];
     }
 
-    public static function parseStringBlock(string $stringBlock): Block
+    public static function parseStringBlock(string $stringBlock, ?int $index = null): Block
     {
         $result = self::reduceStringBlock($stringBlock);
         list($stringBlock, $isOptional, $isRepeating) = array_values($result);
 
-        preg_match_all(
-            '/[\(]?-{1,2}(\w+)/',
-            $stringBlock,
-            $matches
-        );
+        if(preg_match('/^[\w\d]/',$stringBlock)){
+            $optionStrings = [];
+        }else {
+            preg_match_all(
+                '/[\(]?-{1,2}(\w+)/',
+                $stringBlock,
+                $matches
+            );
 
-        $optionStrings = $matches[1] ?? array();
+            $optionStrings = $matches[1] ?? array();
+        }
 
         if (empty($optionStrings)) {
             // Operand.
@@ -155,17 +211,15 @@ class UtilityArgumentString
                 return strlen($a) > strlen($b);
             });
 
-            $option = new Option($isOptional, $isRepeating, $optionStrings[0], array_slice($optionStrings, 1));
+            $option = new Option($isOptional, $isRepeating, $index, $optionStrings[0], array_slice($optionStrings, 1));
 
             if (preg_match('([\s\[]\w+(?:\.{3})?\]?$)', $stringBlock, $matches)) {
                 $result = self::reduceStringBlock($matches[0]);
-                list($stringBlock, $isOptional, $isRepeating) = array_values($result);
+                list($stringBlock, $isOptional,) = array_values($result);
 
-                if ($option->isRepeating()) {
-                    $isRepeating = true;
-                }
-
-                $option->setArgument(new Argument($isOptional, $isRepeating, trim($stringBlock)));
+                $argument = new Argument($isOptional, trim($stringBlock));
+                $argument->setParent($option);
+                $option->setArgument($argument);
             }
 
             return $option;

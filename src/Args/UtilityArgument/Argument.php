@@ -8,12 +8,11 @@ class Argument extends Block
 
     /**
      * @param  bool  $isOptional
-     * @param  bool  $isRepeating
      * @param  string  $name
      */
-    public function __construct(bool $isOptional, bool $isRepeating, string $name)
+    public function __construct(bool $isOptional, string $name)
     {
-        parent::__construct($isOptional, $isRepeating);
+        parent::__construct($isOptional, false);
 
         $this->name = $name;
     }

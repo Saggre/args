@@ -23,7 +23,7 @@ class UtilityArgumentStringTest extends TestCase
             self::assertNotNull($block->getArgument());
             self::assertEquals('argument_name', $block->getArgument()->getName());
             self::assertEquals(true, $block->getArgument()->isOptional());
-            self::assertEquals(true, $block->getArgument()->isRepeating());
+            self::assertEquals(false, $block->getArgument()->isRepeating());
         }
 
         $block = UtilityArgumentString::parseStringBlock('-c[c_argument]');
@@ -51,7 +51,7 @@ class UtilityArgumentStringTest extends TestCase
             self::assertNotNull($block->getArgument());
             self::assertEquals('d_argument', $block->getArgument()->getName());
             self::assertEquals(false, $block->getArgument()->isOptional());
-            self::assertEquals(true, $block->getArgument()->isRepeating());
+            self::assertEquals(false, $block->getArgument()->isRepeating());
         }
 
         $block = UtilityArgumentString::parseStringBlock('--delta delta_argument');

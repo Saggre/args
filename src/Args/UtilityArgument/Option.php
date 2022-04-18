@@ -7,8 +7,9 @@ class Option extends Block
     protected string $char;
     protected array $alternates;
     protected ?Argument $argument = null;
+    protected ?int $index;
 
-    public function __construct(bool $isOptional, bool $isRepeating, string $char, array $alternates = array())
+    public function __construct(bool $isOptional, bool $isRepeating, ?int $index, string $char, array $alternates = array())
     {
         parent::__construct($isOptional, $isRepeating);
 
@@ -18,6 +19,7 @@ class Option extends Block
 
         $this->char       = $char[0];
         $this->alternates = $alternates;
+        $this->index      = $index;
     }
 
     public function asGetoptParams(): array
@@ -94,5 +96,21 @@ class Option extends Block
     public function setArgument(Argument $argument): void
     {
         $this->argument = $argument;
+    }
+
+    /**
+     * @return int|null
+     */
+    public function getIndex(): ?int
+    {
+        return $this->index;
+    }
+
+    /**
+     * @param  int|null  $index
+     */
+    public function setIndex(?int $index): void
+    {
+        $this->index = $index;
     }
 }
