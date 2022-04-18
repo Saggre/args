@@ -95,7 +95,7 @@ class UtilityArgumentString
     public static function sanitizeArgumentString(string $argumentString): string
     {
         // Removes program name from argument string if it is present.
-        $argumentString = preg_replace('/^[^\s\[\(]*/', '', $argumentString) ?? $argumentString;
+        $argumentString = preg_replace('/^[^-\s\[\(]*/', '', $argumentString) ?? $argumentString;
         // Replace equal signs with spaces.
         $argumentString = preg_replace('/=/', ' ', $argumentString);
         // Removes unnecessary whitespaces.

@@ -2,6 +2,8 @@
 
 namespace Args;
 
+use Args\Loader\InputArgument;
+use Args\Loader\InputArgumentValue;
 use Args\UtilityArgument\Option;
 
 class Loader
@@ -45,9 +47,9 @@ class Loader
         return $args;
     }
 
-    public function collectArgument(array $args, Option $option): array
+    public function collectArgument(array $args, Option $option): InputArgument
     {
-        $values = [];
+        $inputArgument = new InputArgument();
 
         $args = $this->parseArgs($args);
         $args = $this->NormalizeArgs($args);
@@ -63,10 +65,10 @@ class Loader
                 if ($isOption) {
                     $collectingArgument = null;
                 } else {
-                    $values[] = $value;
+                    $inputArgument->addValue(new InputArgumentValue($value, $i));
 
-                    if (count($values) > 1 && ! $collectingArgument->isRepeating()) {
-                        throw new \RuntimeException("Argument {$collectingArgument->getName()} is not repeating");
+                    if ( ! $collectingArgument->isRepeating()) {
+                        $collectingArgument = null;
                     }
                 }
             }
@@ -79,23 +81,21 @@ class Loader
                 }
 
                 if ($option->getArgument() === null) {
-                    $values[] = true;
+                    $inputArgument->addValue(new InputArgumentValue(true, $i));
                 } else {
                     $collectingArgument = $option->getArgument();
                 }
-
-                continue;
             }
         }
 
-        if ( ! $option->isOptional() && empty($values)) {
+        if ( ! $option->isOptional() && empty($inputArgument->getValues())) {
             throw new \RuntimeException("Option '{$option->getChar(true)}' is required");
         }
 
-        return $values;
+        return $inputArgument;
     }
 
-    public function getOption(string $name): array
+    public function getOption(string $name): InputArgument
     {
         $option = $this->map->findOption($name);
 

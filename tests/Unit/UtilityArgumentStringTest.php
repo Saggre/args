@@ -51,7 +51,7 @@ class UtilityArgumentStringTest extends TestCase
             self::assertNotNull($block->getArgument());
             self::assertEquals('d_argument', $block->getArgument()->getName());
             self::assertEquals(false, $block->getArgument()->isOptional());
-            self::assertEquals(false, $block->getArgument()->isRepeating());
+            self::assertEquals(true, $block->getArgument()->isRepeating());
         }
 
         $block = UtilityArgumentString::parseStringBlock('--delta delta_argument');
@@ -148,6 +148,7 @@ class UtilityArgumentStringTest extends TestCase
             '(-f|--files) filename...[(-l|--limit) seconds]',
             UtilityArgumentString::sanitizeArgumentString('(-f|--files) filename...[(-l|--limit) seconds]')
         );
+        self::assertEquals('-u[-p]', UtilityArgumentString::sanitizeArgumentString('-u[-p]'));
     }
 
     /**
