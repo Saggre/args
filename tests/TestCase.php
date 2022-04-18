@@ -1,6 +1,6 @@
 <?php
 
-namespace Args\Test\Unit;
+namespace Args\Test;
 
 use Args\Loader;
 
@@ -9,19 +9,6 @@ use Args\Loader;
  */
 class TestCase extends \PHPUnit\Framework\TestCase
 {
-    /**
-     * Argument loader instance.
-     *
-     * @var Loader
-     */
-    protected Loader $loader;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->loader = new Loader();
-    }
-
     /**
      * Set global arguments ($argv).
      *

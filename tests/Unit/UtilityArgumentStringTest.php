@@ -2,6 +2,7 @@
 
 namespace Args\Test\Unit;
 
+use Args\Test\TestCase;
 use Args\UtilityArgument\Operand;
 use Args\UtilityArgument\Option;
 use Args\UtilityArgumentString;
@@ -143,6 +144,10 @@ class UtilityArgumentStringTest extends TestCase
         self::assertEquals('-a[-b]', UtilityArgumentString::sanitizeArgumentString('program -a[-b]'));
         self::assertEquals('-a[-b]', UtilityArgumentString::sanitizeArgumentString('program -a [ -b] '));
         self::assertEquals('[-c option_argument]', UtilityArgumentString::sanitizeArgumentString('[-c=option_argument]'));
+        self::assertEquals(
+            '(-f|--files) filename...[(-l|--limit) seconds]',
+            UtilityArgumentString::sanitizeArgumentString('(-f|--files) filename...[(-l|--limit) seconds]')
+        );
     }
 
     /**
@@ -151,12 +156,17 @@ class UtilityArgumentStringTest extends TestCase
      * @see https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap12.html#tag_12_01
      * @return void
      */
-    public function testexplodeStringBlocks()
+    public function testExplodeStringBlocks()
     {
         $blocks = UtilityArgumentString::explodeStringBlocks('[-a][-b[option_argument]]');
         self::assertCount(2, $blocks);
         self::assertEquals('[-a]', array_shift($blocks));
         self::assertEquals('[-b[option_argument]]', array_shift($blocks));
+
+        $blocks = UtilityArgumentString::explodeStringBlocks('(-f|--files) filename... [(-l|--limit) seconds]');
+        self::assertCount(2, $blocks);
+        self::assertEquals('(-f|--files) filename...', array_shift($blocks));
+        self::assertEquals('[(-l|--limit) seconds]', array_shift($blocks));
 
         $blocks = UtilityArgumentString::explodeStringBlocks('[-a][-b][-c option_argument][-d|-e][-f[option_argument]][operand...]');
         self::assertCount(6, $blocks);

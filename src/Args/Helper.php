@@ -15,4 +15,19 @@ class Helper
     {
         return preg_replace('/^--?/', '', $argument);
     }
+
+    public static function isArgument(string $argument): bool
+    {
+        return preg_match('/^--?/', $argument);
+    }
+
+    public static function isShortArgument(string $argument): bool
+    {
+        return preg_match('/^-/', $argument);
+    }
+
+    public static function getPositionalArguments(): array
+    {
+        // TODO
+    }
 }

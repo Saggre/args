@@ -2,6 +2,8 @@
 
 namespace Args\Test\Unit;
 
+use Args\Test\TestCase;
+
 use function Args\getArg;
 
 class ExampleTest extends TestCase

@@ -27,6 +27,45 @@ class UtilityArgumentString
     }
 
     /**
+     * @param  string  $name
+     *
+     * @return Option|null
+     */
+    public function findOption(string $name): ?Option
+    {
+        $name = Helper::stripArgument($name);
+
+        foreach ($this->blocks as $block) {
+            if ( ! is_a($block, Option::class)) {
+                continue;
+            }
+
+            if (in_array($name, $block->getAllIdentifiers())) {
+                return $block;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return Option[]
+     */
+    public function getOptions(): array
+    {
+        $options = [];
+        foreach ($this->blocks as $block) {
+            if ( ! is_a($block, Option::class)) {
+                continue;
+            }
+
+            $options[] = $block;
+        }
+
+        return $options;
+    }
+
+    /**
      * Parse argument string into blocks.
      *
      * @param  string  $argumentString
@@ -56,7 +95,7 @@ class UtilityArgumentString
     public static function sanitizeArgumentString(string $argumentString): string
     {
         // Removes program name from argument string if it is present.
-        $argumentString = preg_replace('/^[^\s\[]*/', '', $argumentString) ?? $argumentString;
+        $argumentString = preg_replace('/^[^\s\[\(]*/', '', $argumentString) ?? $argumentString;
         // Replace equal signs with spaces.
         $argumentString = preg_replace('/=/', ' ', $argumentString);
         // Removes unnecessary whitespaces.
@@ -121,6 +160,10 @@ class UtilityArgumentString
             if (preg_match('([\s\[]\w+(?:\.{3})?\]?$)', $stringBlock, $matches)) {
                 $result = self::reduceStringBlock($matches[0]);
                 list($stringBlock, $isOptional, $isRepeating) = array_values($result);
+
+                if ($option->isRepeating()) {
+                    $isRepeating = true;
+                }
 
                 $option->setArgument(new Argument($isOptional, $isRepeating, trim($stringBlock)));
             }

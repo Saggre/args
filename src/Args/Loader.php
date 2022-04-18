@@ -2,127 +2,109 @@
 
 namespace Args;
 
+use Args\UtilityArgument\Option;
+
 class Loader
 {
-    protected array $parsedArgs;
+    protected UtilityArgumentString $map;
 
-    public function __construct()
+    public function __construct(UtilityArgumentString $map)
     {
-        $this->parsedArgs = $this->parseArgs();
+        $this->map = $map;
     }
 
-    public function declareArgument(){
-
-    }
-
-    /**
-     * @return array[]
-     */
-    public function getParsedArgs(): array
+    public function parseArgs(array $args): array
     {
-        return $this->parsedArgs;
-    }
+        $arguments = array();
 
-    /**
-     * Add an argument to argument array.
-     *
-     * @param array        $args Argument array.
-     * @param string       $key Argument key.
-     * @param array|string $value Argument value or values.
-     *
-     * @return void
-     */
-    public function addArg(array &$args, string $key, $value)
-    {
-        if (empty($value)) {
-            $value = true;
+        foreach ($args as $arg) {
+            $split = explode('=', $arg);
+
+            foreach ($split as $value) {
+                $arguments[] = trim($value);
+            }
         }
 
-        $value = is_array($value) ? $value : array($value);
-
-        if ( ! isset($args[$key])) {
-            $args[$key] = array();
-        }
-
-        $args[$key] = array_merge(
-            $value,
-            $args[$key]
-        );
+        return $arguments;
     }
 
-    /**
-     * Parse input params.
-     *
-     * @return array
-     */
-    protected function parseArgs(): array
+    public function normalizeArgs(array $args): array
     {
-        global $argv;
+        foreach ($args as &$arg) {
+            $option = $this->map->findOption($arg);
 
-        $args = array(
-            'named' => array(),
-            'short' => array(),
-            'posit' => array(),
-        );
+            if (empty($option)) {
+                continue;
+            }
 
-        for ($i = 1; $i < count($argv); $i++) {
-            if (preg_match('/^--([^=]+)=?(.*)/', $argv[$i], $m)) {
-                $this->addArg($args['named'], $m[1], $m[2] ?? null);
-            } elseif (preg_match('/^-([^=-]+)=?(.*)/', $argv[$i], $m)) {
-                foreach (str_split($m[1]) as $char) {
-                    $this->addArg($args['short'], $char, $m[2] ?? null);
-                }
-            } else {
-                $args['posit'][] = $argv[$i];
+            if (in_array($arg, $option->getAlternates(true))) {
+                $arg = $option->getChar(true);
             }
         }
 
         return $args;
     }
 
-    /**
-     * Get argument by name or shorthand.
-     *
-     * @param int|string  $arg Full argument name ex. --usage or positional argument index. Positional arguments are indexed from 0.
-     * @param string|null $short_arg Shorthand argument name ex. -u.
-     * @param int         $flags Parse options.
-     *
-     * @return string|array|null Argument value or array if there are multiple values or null if not found.
-     */
-    public function getArg($arg, ?string $short_arg = null, int $flags = ARGS_GET_ARG_DEFAULT_FLAGS)
+    public function collectArgument(array $args, Option $option): array
     {
-        list($named, $short, $posit) = array_values($this->getParsedArgs());
+        $values = [];
 
-        if (is_numeric($arg)) {
-            $index = $arg;
+        $args = $this->parseArgs($args);
+        $args = $this->NormalizeArgs($args);
 
-            if ($short_arg !== null) {
-                throw new \RuntimeException("Argument $arg is not a valid argument name");
+        $collectingArgument = null;
+        $foundCurrent       = 0;
+        for ($i = 0; $i < count($args); $i++) {
+            $value     = $args[$i];
+            $isOption  = Helper::isArgument($value);
+            $isCurrent = $value === $option->getChar(true);
+
+            if ( ! empty($collectingArgument)) {
+                if ($isOption) {
+                    $collectingArgument = null;
+                } else {
+                    $values[] = $value;
+
+                    if (count($values) > 1 && ! $collectingArgument->isRepeating()) {
+                        throw new \RuntimeException("Argument {$collectingArgument->getName()} is not repeating");
+                    }
+                }
             }
 
-            return $posit[$index] ?? null;
+            if ($isCurrent) {
+                $foundCurrent++;
+
+                if ($foundCurrent > 1 && ! $option->isRepeating()) {
+                    throw new \RuntimeException(sprintf('Option "%s" is not repeating', $option->getChar(true)));
+                }
+
+                if ($option->getArgument() === null) {
+                    $values[] = true;
+                } else {
+                    $collectingArgument = $option->getArgument();
+                }
+
+                continue;
+            }
         }
 
-        $result = array();
-
-        if (isset($named[$arg])) {
-            $this->addArg($result, $arg, $named[$arg]);
+        if ( ! $option->isOptional() && empty($values)) {
+            throw new \RuntimeException("Option '{$option->getChar(true)}' is required");
         }
 
-        if ($short_arg && isset($short[$short_arg])) {
-            $this->addArg($result, $arg, $short[$short_arg]);
+        return $values;
+    }
+
+    public function getOption(string $name): array
+    {
+        $option = $this->map->findOption($name);
+
+        if (empty($option)) {
+            throw new \RuntimeException("Option '$name' not specified in utility argument string");
         }
 
-        if (($flags & ARGS_UNWRAP_SINGLE_VALUE) && isset($result[$arg]) && count($result[$arg]) === 1) {
-            return reset($result[$arg]);
-        }
+        global $argv;
 
-        $arg_count = isset($result[$arg]) ? count($result[$arg]) : 0;
-        if (($flags & ARGS_DISALLOW_MULTIPLE_VALUES) && $arg_count > 1) {
-            $arg_name = "--$arg" . ($short_arg ? " or -$short_arg" : '');
-            throw new \RuntimeException("Multiple values not allowed for argument $arg_name. $arg_count provided.");
-        }
-
-        return $result[$arg] ?? array();
+        return $this->collectArgument($argv, $option);
     }
 }
