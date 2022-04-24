@@ -37,8 +37,8 @@
     }
   },
   "scripts": {
-    "create-docs": "phpdoc --directory=src --target=docs --template='vendor/saggre/phpdocumentor-markdown/themes/markdown'",
-    "test": "vendor/bin/phpunit"
+    "run-tests": "vendor/bin/phpunit",
+    "create-docs": "phpdoc --directory=src --target=docs/.wiki --template='vendor/saggre/phpdocumentor-markdown/themes/markdown'"
   },
   "license": "MIT"
 }

@@ -15,7 +15,3 @@ phpunit.xml
 .phpdoc
 /phpdoc/
 phpdoc.xml
-
-# Documentation
-/docs/
-
