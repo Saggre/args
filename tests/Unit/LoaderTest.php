@@ -52,13 +52,13 @@ class LoaderTest extends TestCase
         self::assertNotEmpty($block);
         $inputElement = $loader->getInputElementForBlock($block);
         self::assertNotEmpty($inputElement);
-        self::assertEquals(['val',], $inputElement->getValues());
+        self::assertEquals(['val'], $inputElement->getValues());
 
         $block = $util->findOperandByName('test-args');
         self::assertNotEmpty($block);
         $inputElement = $loader->getInputElementForBlock($block);
         self::assertNotEmpty($inputElement);
-        self::assertEquals(['op',], $inputElement->getValues());
+        self::assertEquals(['op'], $inputElement->getValues());
     }
 
     public function testGetOpt()
